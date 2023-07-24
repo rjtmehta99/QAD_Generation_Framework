@@ -1,4 +1,5 @@
 *.csv
 *.xlsx
+*.docx
 __pycache__
 .vscode
