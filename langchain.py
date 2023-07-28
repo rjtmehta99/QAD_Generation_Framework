@@ -12,7 +12,7 @@ loader = Docx2txtLoader(r'/home/rjt/QA_LLM_Experiments/data/2022_Annual_Report.d
 data = loader.load()
 
 # chunk documents
-text_splitter = CharacterTextSplitter(separator='.', chunk_size=1000, chunk_overlap=50)
+text_splitter = CharacterTextSplitter(separator='\n\n', chunk_size=1000, chunk_overlap=50)
 docs = text_splitter.split_documents(data)
 
 # Vector DB
@@ -21,4 +21,5 @@ vector_db = Chroma.from_documents(docs, embed_model)
 # Find related docs
 query = 'how is microsoft earning trust?'
 docs = vector_db.similarity_search(query)
+len(docs)
 docs[0].page_content
