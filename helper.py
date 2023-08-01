@@ -18,16 +18,17 @@ def openstax_to_doc(path:str) -> dict[str, list[str]]:
     dict_df = df.to_dict('records')
     return dict_df
 
-def add_to_docstore(docs, index) -> None:
+def add_to_docstore(docs:dict[str, list[str]], index:str, delete_docs:bool=False) -> None:
     # Initialize document store and write in the documents
     doc_store = ElasticsearchDocumentStore(index=index)
-    # Clear documents from previous runs
-    doc_store.delete_documents(index=index)
+    if delete_docs:
+        # Clear documents from previous runs
+        doc_store.delete_documents(index=index)
     # Write documents from current execution
     doc_store.write_documents(docs)
     return doc_store
 
-def classify_docs(labels: list[str], doc_store, index: str) -> None:
+def classify_docs(labels:list[str], doc_store, index:str) -> None:
     classifier = TransformersDocumentClassifier(task='zero-shot-classification',
                                                 model_name_or_path='MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli',
                                                 labels=labels, use_gpu=True)
