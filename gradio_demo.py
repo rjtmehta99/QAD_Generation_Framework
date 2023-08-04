@@ -12,6 +12,7 @@ question_generator = QuestionGenerator(model_name_or_path='valhalla/t5-base-e2e-
 reader = FARMReader(model_name_or_path='deepset/roberta-base-squad2',
                     top_k=1, use_gpu=True)
 pipeline = QuestionAnswerGenerationPipeline(question_generator, reader)
+selected_rows = []
 
 theme = gr.themes.Soft()
 
@@ -27,12 +28,11 @@ def upload_csv(topic, file, labels, data_source):
         labels = labels.split(',')
         labels = [label.strip() for label in labels]
         doc_store = helper.classify_docs(labels=labels, doc_store=doc_store, index=topic)
-        return [f'CSV added to Elasticsearch under {topic}.\nLabels added.', 
+        return [gr.update(value=f'CSV added to Elasticsearch under {topic}.\nLabels added.', visible=True),
                 gr.update(visible=True),
                 gr.update(visible=True)]
 
-    return [f'CSV added to Elasticsearch under {topic}.', 
-            gr.update(visible=True),
+    return [gr.update(value=f'CSV added to Elasticsearch under {topic}.', visible=True),
             gr.update(visible=True),
             gr.update(visible=True)]
 
@@ -59,7 +59,8 @@ def generate_qa_pairs(topic, retrieval_query):
             generated_ques.append(query_content)
             generated_ans.append(answer.answer)
             doc_contexts.append(document.content)
-
+    
+    global df_gen_qa
     df_gen_qa = pd.DataFrame(data={'generated_question':generated_ques, 'generated_answer':generated_ans, 'document_context':doc_contexts})
     path = f'data/{topic}_generated_QA.csv'
     df_gen_qa.to_csv(path, index=False)
@@ -71,11 +72,23 @@ def generate_qa_pairs(topic, retrieval_query):
 
     return [gr.update(value=qa_output_str, visible=True),
             gr.update(value=path, visible=True),
-            gr.update(value=df_gen_qa, visible=True)]
+            gr.update(value=df_gen_qa, visible=True),
+            gr.update(visible=True)]
 
 
 def change_label(topic):
     return gr.update(label=f'Add {topic} CSV')
+
+
+def print_cell(event: gr.SelectData):
+    print(f'{event.index[0]} row added')
+    selected_rows.append(event.index[0])
+    #selected_rows = list(set(selected_rows))
+    df_select = df_gen_qa.iloc[selected_rows, :]
+    path = f'data/selected_data.csv'
+    df_select.to_csv(path, index=False)
+    return gr.update(value=path)
+
 
 with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as demo:
     gr.HTML(constants.page_title)
@@ -93,19 +106,25 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as dem
     
     upload_btn = gr.Button('Upload')
     data_output_box = gr.Textbox(label='Data Upload Status', visible=False)
-    retrieval_query = gr.Textbox(label='Retrieval Query - BM25', placeholder='Enter query', visible=False)
+    retrieval_query = gr.Textbox(label='Retrieval Query - BM25', placeholder='Enter query', 
+                                 visible=False)
     generate_qa_btn = gr.Button(f'Generate Question Answer Pairs', visible=False)
 
     upload_btn.click(fn=upload_csv,
                     inputs=[topic, file, labels, data_source], 
-                    outputs=[data_output_box, data_output_box, generate_qa_btn, retrieval_query])
+                    outputs=[data_output_box, generate_qa_btn, retrieval_query])
     #retrieval_query.render()
     qa_output_box = gr.Textbox(label='Generated QA Pairs Status', visible=False)
     generated_file = gr.File(label='Generated CSV', visible=False)
-    df_output = gr.Dataframe(label='Generated QA Pairs', visible=False, wrap=True)
+    df_output = gr.Dataframe(label='Generated QA Pairs', visible=False, wrap=True, 
+                             show_label=True, interactive=False)
+    selected_rows_file = gr.File(label='Download selected rows', visible=False)
+    
     generate_qa_btn.click(fn=generate_qa_pairs, 
                           inputs=[topic, retrieval_query], 
-                          outputs=[qa_output_box, generated_file, df_output])
+                          outputs=[qa_output_box, generated_file, df_output, selected_rows_file])
+    
+    df_output.select(fn=print_cell, inputs=None, outputs=selected_rows_file)
 
 demo.launch()
 
