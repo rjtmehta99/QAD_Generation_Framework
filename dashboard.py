@@ -1,9 +1,9 @@
 import helper
 import constants
 import gradio as gr
-from haystack.nodes import QuestionGenerator, FARMReader, BM25Retriever
 from haystack.pipelines import QuestionAnswerGenerationPipeline
 from haystack.document_stores import ElasticsearchDocumentStore
+from haystack.nodes import QuestionGenerator, FARMReader, BM25Retriever
 
 question_generator = QuestionGenerator(model_name_or_path='valhalla/t5-base-e2e-qg',
                                         max_length=420, split_length=75, 
@@ -18,6 +18,7 @@ def upload_csv(topic, file, labels, data_source):
     Load CSV to Elasticsearch document store and apply zero shot classification.
     """
     print('Uploading CSV')
+    gr.Info(f'Uploading file to Elasticsearch. Please wait.')
     if data_source == 'OpenStax.org':
         docs = helper.openstax_to_doc(path=file.name)
     else:
@@ -124,7 +125,7 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
 
     df_output.select(fn=add_row, inputs=None, outputs=selected_rows_file)
 
-dashboard.queue().launch(server_port=8080)
+dashboard.queue().launch(server_port=8080, share=True)
 
 # TODO - 
 # change output in gen_qa_pairs on status update

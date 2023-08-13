@@ -4,3 +4,4 @@
 data/chromedriver.exe
 __pycache__
 .vscode
+*.model*

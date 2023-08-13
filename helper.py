@@ -1,10 +1,6 @@
 import pandas as pd
-from pprint import pprint
-from tqdm.auto import tqdm
-from haystack.nodes import QuestionGenerator, BM25Retriever, FARMReader, TransformersDocumentClassifier
 from haystack.document_stores import ElasticsearchDocumentStore
-from haystack.pipelines import RetrieverQuestionGenerationPipeline, QuestionAnswerGenerationPipeline
-from haystack.utils import print_questions
+from haystack.nodes import TransformersDocumentClassifier
 
 def openstax_to_doc(path:str) -> dict[str, list[str]]:
     """
