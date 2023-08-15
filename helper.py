@@ -65,3 +65,4 @@ def run_pipeline(pipeline, docs:dict[str, list[str]]) -> pd.DataFrame:
             doc_contexts.append(document.content)
     df = pd.DataFrame(data={'generated_question':generated_ques, 'generated_answer':generated_ans, 'document_context':doc_contexts})
     return df
+
