@@ -13,14 +13,14 @@ from rapidfuzz.distance import Levenshtein
 # Distractor Generation Helpers
 def clean_answer(answer: str) -> str:
     stage_0 = answer.split(' ')
-    stage_1 = [val[0].isupper() for val in stage_0]
-    if any(stage_1):
-        stage_2 = answer.title()
+    stage_1 = [word for word in stage_0 if word.lower() not in constants.STOPWORDS]
+    stage_2 = [val[0].isupper() for val in stage_1]
+    if any(stage_2):
+        stage_3 = answer.title()
     else:
-        stage_2 = answer.lower()
-
-    stage_3 = re.sub(' ', '_', stage_2)
-    return stage_3
+        stage_3 = answer.lower()
+    stage_4 = re.sub(' ', '_', stage_3)
+    return stage_4
 
 
 def clean_distractors(distractors: list[str], cleaned_answer: str) -> list[str]:
@@ -41,6 +41,7 @@ def filter_distractors(cleaned_distractors: list[str], cleaned_answer: str) -> l
     filtered_distractors = list(map(lambda x:x[0], filtered_distractors))
     return filtered_distractors
 
+
 def generate_disctractors(answer: str, distractor_limit: int=10) -> list[str]:
     try:
         cleaned_answer = clean_answer(answer)
@@ -53,4 +54,3 @@ def generate_disctractors(answer: str, distractor_limit: int=10) -> list[str]:
     except KeyError:
         print(f'No matching word found for {answer} in Word2Vec')
         return ['' for _ in range(distractor_limit)]
-    

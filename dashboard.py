@@ -68,6 +68,7 @@ def generate_qa_pairs(topic, retrieval_query):
     else:
         qa_output_str = f'{len(df_gen_qa)} QA pairs were generated. Download the file below.'
 
+    #del doc_store
     return [gr.update(value=qa_output_str, visible=True),
             gr.update(value=path, visible=True),
             gr.update(value=df_gen_qa, visible=True),
@@ -77,17 +78,24 @@ def generate_qa_pairs(topic, retrieval_query):
 
 def generate_distractors(file, topic):
     df = pd.read_csv(file.name)
+    
+    #global reader, question_generator, pipeline
+    #del reader, question_generator, pipeline
+    
     if any(df.columns != constants.DIST_COLS):
         gr.Error('Uploaded CSV has incorrect format.')
     else:
         # Rare usage, importing here to prevent memory overload by Word2Vec and LLMs
+        
         import distractor_generation
         gr.Info('Generating distractors')
         df['distractors'] = df['generated_answer'].apply(lambda x: distractor_generation.generate_disctractors(answer=x, distractor_limit=constants.DISTRACTOR_LIMIT))
         # Code taken from https://stackoverflow.com/questions/43752845/list-of-values-to-columns-in-pandas-dataframe
         df_distractor = pd.DataFrame(df['distractors'].values.tolist()).add_prefix(constants.COL_PREFIX)
         df_distractor = df_distractor.join(df[constants.DIST_COLS])
-        df_distractor.columns = constants.DIST_COLS+[constants.COL_PREFIX+str(_) for _ in range(constants.DISTRACTOR_LIMIT)]
+        # Reorder columns
+        df_distractor = df_distractor[constants.DIST_COLS+[constants.COL_PREFIX+str(_) for _ in range(constants.DISTRACTOR_LIMIT)]]
+        
         path = f'data/{topic}_gen_QA_distractor.csv'
         df_distractor.to_csv(path, index=False)
         
@@ -169,5 +177,6 @@ dashboard.queue().launch(server_port=8080, share=False)
 # 5. Add data filtering (via class labels)
 # 6. Give option to select QA model
 # 7. Give option to select number of distractors
-# 8. Readme word2vec downloading
-# 9. Remove stopwords from distractors (the cell, an acid)
+# 8. Readme word2vec downloading, memory requirements (13 GB)
+# 9. DONE: Remove stopwords from distractors (the cell, an acid)
+# 10. Numbers for Distractor Generation

@@ -7,3 +7,4 @@ DIST_COLS = ['generated_question', 'generated_answer', 'document_context']
 DISTRACTOR_LIMIT = 10
 COL_PREFIX = 'distractor_'
 WORD2VEC_FILE = 'data/word2vec-google-news-300.model'
+STOPWORDS = ['a', 'an', 'the', 'from', 'of', 'its', 'it\'s']
