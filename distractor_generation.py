@@ -10,6 +10,15 @@ import re
 from rapidfuzz.process import extract
 from rapidfuzz.distance import Levenshtein
 
+def check_numeric(answer):
+    #stage_0 = answer.split(' ')
+    #stage_1 = [constants.WORD_NUMBER_DICT[word] if word in constants.WORD_NUMBER_DICT else word for word in stage_1]
+    if answer in constants.WORD_NUMBER_DICT:
+        numeric_answer = constants.WORD_NUMBER_DICT[answer]
+        return numeric_answer
+    return None
+
+
 # Distractor Generation Helpers
 def clean_answer(answer: str) -> str:
     stage_0 = answer.split(' ')
@@ -44,12 +53,18 @@ def filter_distractors(cleaned_distractors: list[str], cleaned_answer: str) -> l
 
 def generate_disctractors(answer: str, distractor_limit: int=10) -> list[str]:
     try:
-        cleaned_answer = clean_answer(answer)
-        distractors = model.most_similar(cleaned_answer, topn=20)
-        cleaned_distractors = clean_distractors(distractors, cleaned_answer)
-        filtered_distractors = filter_distractors(cleaned_distractors, cleaned_answer)[:distractor_limit]
-        print(f'Generated distractor for {answer}')
-        return filtered_distractors
+        numeric_answer = check_numeric(answer)
+        if numeric_answer:
+            distractors = [numeric_answer+5, numeric_answer+10, numeric_answer-5, numeric_answer-10,
+                           numeric_answer+1, numeric_answer-1]
+            return distractors
+        else:
+            cleaned_answer = clean_answer(answer)
+            distractors = model.most_similar(cleaned_answer, topn=20)
+            cleaned_distractors = clean_distractors(distractors, cleaned_answer)
+            filtered_distractors = filter_distractors(cleaned_distractors, cleaned_answer)[:distractor_limit]
+            print(f'Generated distractor for {answer}')
+            return filtered_distractors
 
     except KeyError:
         print(f'No matching word found for {answer} in Word2Vec')
