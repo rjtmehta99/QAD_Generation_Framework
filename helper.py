@@ -1,6 +1,7 @@
 import pandas as pd
 from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.nodes import TransformersDocumentClassifier
+import gc
 
 def openstax_to_doc(path:str) -> dict[str, list[str]]:
     """
@@ -64,5 +65,7 @@ def run_pipeline(pipeline, docs:dict[str, list[str]]) -> pd.DataFrame:
             generated_ans.append(answer.answer)
             doc_contexts.append(document.content)
     df = pd.DataFrame(data={'generated_question':generated_ques, 'generated_answer':generated_ans, 'document_context':doc_contexts})
+    del pipeline
+    gc.collect()
     return df
 

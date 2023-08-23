@@ -10,12 +10,27 @@ import re
 from rapidfuzz.process import extract
 from rapidfuzz.distance import Levenshtein
 
-def check_numeric(answer):
+def check_numeric(answer: str) -> int | None:
+    """
+    Check if the answer is a number written in word. If so, return the integral value. 
+    Limited from 0-100.
+
+    Args:
+        answer (str): Answer string
+
+    Returns:
+        int | None: Corresponding integer or None
+    """
     #stage_0 = answer.split(' ')
     #stage_1 = [constants.WORD_NUMBER_DICT[word] if word in constants.WORD_NUMBER_DICT else word for word in stage_1]
     if answer in constants.WORD_NUMBER_DICT:
         numeric_answer = constants.WORD_NUMBER_DICT[answer]
         return numeric_answer
+    try:
+        if int(answer):
+            return int(answer)
+    except ValueError:
+        return None
     return None
 
 
@@ -51,21 +66,43 @@ def filter_distractors(cleaned_distractors: list[str], cleaned_answer: str) -> l
     return filtered_distractors
 
 
-def generate_disctractors(answer: str, distractor_limit: int=10) -> list[str]:
+def generate_disctractors(answer: str, distractor_count: int=10) -> list[str]:
     try:
         numeric_answer = check_numeric(answer)
         if numeric_answer:
-            distractors = [numeric_answer+5, numeric_answer+10, numeric_answer-5, numeric_answer-10,
-                           numeric_answer+1, numeric_answer-1]
-            return distractors
+            print(f'Creating numeric distractors for {answer}')
+            numeric_distractors = [numeric_answer+5, numeric_answer+10, numeric_answer-5, 
+                                   numeric_answer-10, numeric_answer+1, numeric_answer-1]
+            # Add empty values to other distractors
+            if distractor_count > len(numeric_distractors):
+                remaining_count = distractor_count - len(numeric_distractors)
+                remaining_values = ['' for _ in range(remaining_count)]
+                numeric_distractors.extend(remaining_values)
+            # Remove extra distractors
+            elif distractor_count < len(numeric_distractors):
+                #extra_count = len(numeric_distractors) - distractor_count
+                numeric_distractors[:distractor_count]
+            return numeric_distractors
+
         else:
             cleaned_answer = clean_answer(answer)
             distractors = model.most_similar(cleaned_answer, topn=20)
             cleaned_distractors = clean_distractors(distractors, cleaned_answer)
-            filtered_distractors = filter_distractors(cleaned_distractors, cleaned_answer)[:distractor_limit]
+            filtered_distractors = filter_distractors(cleaned_distractors, cleaned_answer)[:distractor_count]
             print(f'Generated distractor for {answer}')
             return filtered_distractors
 
     except KeyError:
         print(f'No matching word found for {answer} in Word2Vec')
-        return ['' for _ in range(distractor_limit)]
+        return ['' for _ in range(distractor_count)]
+
+def convert_numeric_answer(answer):
+    try:
+        numeric_answer = check_numeric(answer)
+        if numeric_answer:
+            return numeric_answer
+        numeric_answer = int(answer)
+        return numeric_answer
+    except ValueError:
+        return answer
+    
