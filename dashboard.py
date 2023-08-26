@@ -27,7 +27,15 @@ def upload_csv(topic, file, labels, data_source):
     print('Uploading CSV')
     gr.Info(f'Uploading file to Elasticsearch. Please wait.')
     if data_source == 'OpenStax.org':
-        docs = helper.openstax_to_doc(path=file.name)
+        #docs = helper.openstax_to_doc(path=file.name)
+        docs = helper.csv_to_doc(path=file.name, title='summary_heading', 
+                                 subject='subject', content='summary_text')
+    elif data_source == 'CK12.org':
+        docs = helper.csv_to_doc(path=file.name, title='title',
+                                 subject='subject', content='content')
+    elif data_source == 'Brightstorm':
+        docs = helper.csv_to_doc(path=file.name, title='title',
+                                 subject='subject', content='summary')
     else:
         raise NotImplementedError
     

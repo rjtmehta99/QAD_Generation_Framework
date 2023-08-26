@@ -3,7 +3,8 @@ from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.nodes import TransformersDocumentClassifier
 import gc
 
-def openstax_to_doc(path:str) -> dict[str, list[str]]:
+'''
+def openstax_to_doc(path: str) -> dict[str, list[str]]:
     """
     Convert Openstax dataframe to dict which can be passed as Document to Haystack
     """
@@ -14,9 +15,24 @@ def openstax_to_doc(path:str) -> dict[str, list[str]]:
     df = df[['content', 'meta']]
     dict_df = df.to_dict('records')
     return dict_df
+'''
+
+def csv_to_doc(path: str, **kwargs) -> dict[str, list[str]]:
+    df = pd.read_csv(path)
+    #title = column_dict['title']
+    title = kwargs['title']
+    subject = kwargs['subject']
+    content = kwargs['content']
+    df[title] = df[title].replace('\d+\.\d+', '', regex=True)
+    df = df[[title, subject, content]]
+    df['meta'] = df.apply(lambda x: {'topic': x[title], 'subject': x[subject], 'content': x[content]}, axis=1).to_list()
+    df = df[[content, 'meta']]
+    df.columns = ['content', 'meta']
+    dict_df = df.to_dict('records')
+    return dict_df
 
 
-def add_to_docstore(docs:dict[str, list[str]], index:str, delete_docs:bool=False) -> None:
+def add_to_docstore(docs: dict[str, list[str]], index: str, delete_docs: bool = False) -> None:
     """
     Initialize Elasticsearch document store and write the documents for given index.
     """
@@ -27,7 +43,7 @@ def add_to_docstore(docs:dict[str, list[str]], index:str, delete_docs:bool=False
     return doc_store
 
 
-def classify_docs(labels:list[str], doc_store, index:str) -> None:
+def classify_docs(labels:list[str], doc_store, index: str) -> None:
     """
     Use Zero Shot Classification model to add labels to document.
     Labels added to the metadata for each document.
