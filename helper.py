@@ -1,6 +1,8 @@
 import pandas as pd
 from haystack.document_stores import ElasticsearchDocumentStore
-from haystack.nodes import TransformersDocumentClassifier
+from haystack.schema import Document
+from numpy import nan
+from haystack.nodes import QuestionGenerator, FARMReader, BM25Retriever, EmbeddingRetriever, TransformersDocumentClassifier
 import gc
 
 '''
@@ -19,12 +21,22 @@ def openstax_to_doc(path: str) -> dict[str, list[str]]:
 
 def csv_to_doc(path: str, **kwargs) -> dict[str, list[str]]:
     df = pd.read_csv(path)
-    #title = column_dict['title']
+    #if kwargs['source'] == 'others':
+    if 'source' in kwargs:
+        content = kwargs['content']
+        df['meta'] = ''
+        df = df[[content, 'meta']]
+        dict_df = df.to_dict('records')
+        return dict_df
+
     title = kwargs['title']
     subject = kwargs['subject']
     content = kwargs['content']
     df[title] = df[title].replace('\d+\.\d+', '', regex=True)
     df = df[[title, subject, content]]
+    df = (df
+          .fillna('No content')
+          .replace(nan, 'No content'))
     df['meta'] = df.apply(lambda x: {'topic': x[title], 'subject': x[subject], 'content': x[content]}, axis=1).to_list()
     df = df[[content, 'meta']]
     df.columns = ['content', 'meta']
@@ -85,3 +97,44 @@ def run_pipeline(pipeline, docs:dict[str, list[str]]) -> pd.DataFrame:
     gc.collect()
     return df
 
+def load_all_docs(topic: str) -> list[Document]:
+    doc_store = ElasticsearchDocumentStore(index=topic)
+    docs = doc_store.get_all_documents()
+    return docs
+
+def load_bm25_docs(topic: str, retrieval_query: str) -> list[Document]:
+    doc_store = ElasticsearchDocumentStore(index=topic)
+    retriever = BM25Retriever(document_store=doc_store)
+    docs = retriever.retrieve(query=retrieval_query)
+    return docs
+
+def load_embedded_docs(topic: str, emb_retrieval_query: str) -> list[Document]: 
+    doc_store = ElasticsearchDocumentStore(index=topic, similarity='dot_product', embedding_dim=768)
+    retriever = EmbeddingRetriever(document_store=doc_store, embedding_model='sentence-transformers/msmarco-distilbert-base-v4',
+                                   model_format='sentence_transformers')
+    doc_store.update_embeddings(retriever=retriever)
+    docs = retriever.retrieve(query=emb_retrieval_query)
+    del retriever
+    gc.collect()
+    return docs
+
+def load_zeroshot_docs(topic: str, zero_shot_query: str) -> list[Document]:
+    # Clean input from dashboard
+    zero_shot_classes = zero_shot_query.split(',')
+    zero_shot_classes = [value.strip() for value in zero_shot_classes]
+    # Filtering ES data
+    _filter = {"classification.label": zero_shot_classes}
+    doc_store = ElasticsearchDocumentStore(index=topic)
+    docs = doc_store.get_all_documents(filters=_filter)
+    return docs
+
+def prepare_qa_string(df_gen_qa, **kwargs):
+    if kwargs['retrieval_flag']:
+        qa_output_str = f'BM25 - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{kwargs["retrieval_flag"]}". Download the file below.'
+    elif kwargs['emb_retrieval_flag']:
+        qa_output_str = f'Embedding retrieval - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{kwargs["emb_retrieval_query"]}". Download the file below.'
+    elif kwargs['zero_shot_flag']:
+        qa_output_str = f'Zero shot label - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{kwargs["zero_shot_query"]}". Download the file below.'
+    else:
+        qa_output_str = f'{len(df_gen_qa)} QA pairs were generated. Download the file below.'
+    return qa_output_str

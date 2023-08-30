@@ -36,6 +36,9 @@ def upload_csv(topic, file, labels, data_source):
     elif data_source == 'Brightstorm':
         docs = helper.csv_to_doc(path=file.name, title='title',
                                  subject='subject', content='summary')
+    elif data_source == 'Others':
+        docs = helper.csv_to_doc(path=file.name, source='others', title='', subject='',
+                                 content='content')
     else:
         raise NotImplementedError
     
@@ -47,61 +50,87 @@ def upload_csv(topic, file, labels, data_source):
         return [gr.update(value=f'CSV added to Elasticsearch under {topic}.\nLabels added.', visible=True),
                 gr.update(visible=True),
                 gr.update(visible=True),
+                gr.update(visible=True),
                 gr.update(visible=True)]
 
     return [gr.update(value=f'CSV added to Elasticsearch under {topic}.', visible=True),
             gr.update(visible=True),
             gr.update(visible=True),
+            gr.update(visible=True),
             gr.update(visible=True)]
 
 
-def generate_qa_pairs(topic, retrieval_query, emb_retrieval_query):
+def generate_qa_pairs(topic: str, retrieval_query: str, emb_retrieval_query: str, zero_shot_query: str):
     """
     Generate QA pair on the uploaded CSV.  
-    If query passed, filter documents based on BM25 retrieval.
-    Saves generated QA pairs to CSV.
+    
+    If query passed, filter documents based on BM25 retrieval, embedding based retrieval 
+    or filtered on the basis of generated Zero Shot label.
+    
+    Save generated QA pairs to CSV.
     """
     print('Generating QA Pairs')
     gr.Info('Generating QA Pairs. Please wait.')
     retrieval_flag = False
     emb_retrieval_flag = False
+    zero_shot_flag = False
 
-    if retrieval_query == '' and emb_retrieval_query == '':
+    global selected_rows
+    selected_rows = []
+
+    if retrieval_query == '' and emb_retrieval_query == '' and zero_shot_query == '':
         retrieval_flag = False
-        doc_store = ElasticsearchDocumentStore(index=topic)
-        docs = doc_store.get_all_documents()
+        docs = helper.load_all_docs(topic)
 
     elif retrieval_query != '' and emb_retrieval_query == '':
         retrieval_flag = True
-        doc_store = ElasticsearchDocumentStore(index=topic)
-        retriever = BM25Retriever(document_store=doc_store)
-        docs = retriever.retrieve(query=retrieval_query)
-    
+        docs = helper.load_bm25_docs(topic, retrieval_query)
+
     elif emb_retrieval_query != '' and retrieval_query == '':
         emb_retrieval_flag = True
+        docs = helper.load_embedded_docs(topic, emb_retrieval_query)
+        '''
         doc_store = ElasticsearchDocumentStore(index=topic, similarity='dot_product', embedding_dim=768)
-        retriever = EmbeddingRetriever(document_store=doc_store, embedding_model='sentence-transformers/all-mpnet-base-v2',
+        retriever = EmbeddingRetriever(document_store=doc_store, embedding_model='sentence-transformers/msmarco-distilbert-base-v4',
                                        model_format='sentence_transformers')
         doc_store.update_embeddings(retriever=retriever)
         docs = retriever.retrieve(query=emb_retrieval_query)
-    
+        '''
+
+    elif retrieval_query == '' and emb_retrieval_query == '' and zero_shot_query != '':
+        zero_shot_flag = True
+        docs = helper.load_zeroshot_docs(topic, zero_shot_query)
+        #def load_zeroshot_docs():
+        '''
+        zero_shot_classes = zero_shot_query.split(',')
+        zero_shot_classes = [value.strip() for value in zero_shot_classes]
+        _filter = {"classification.label": zero_shot_classes}
+        print(_filter)
+        doc_store = ElasticsearchDocumentStore(index=topic)
+        docs = doc_store.get_all_documents(filters=_filter)
+        '''
+        
     global df_gen_qa
     pipeline = init_pipeline()
     df_gen_qa = helper.run_pipeline(pipeline, docs)
-    del pipeline
-    gc.collect()
     path = f'data/{topic}_generated_QA.csv'
     df_gen_qa.to_csv(path, index=False)
-
-    # Convert to FXN
+    kwargs = {'retrieval_flag': retrieval_flag, 'emb_retrieval_flag': emb_retrieval_flag, 'zero_shot_flag': zero_shot_flag,
+              'retrieval_query': retrieval_query, 'emb_retrieval_query': emb_retrieval_query, 'zero_shot_query': zero_shot_query}
+    qa_output_str = helper.prepare_qa_string(df_gen_qa, **kwargs)
+    '''
     if retrieval_flag:
         qa_output_str = f'BM25 - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{retrieval_query}". Download the file below.'
     elif emb_retrieval_flag:
         qa_output_str = f'Embedding retrieval - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{emb_retrieval_query}". Download the file below.'
+    elif zero_shot_flag:
+        qa_output_str = f'Zero shot label - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{zero_shot_query}". Download the file below.'
     else:
         qa_output_str = f'{len(df_gen_qa)} QA pairs were generated. Download the file below.'
-
-    #del doc_store
+    '''
+    del pipeline
+    gc.collect()
+    
     return [gr.update(value=qa_output_str, visible=True),
             gr.update(value=path, visible=True),
             gr.update(value=df_gen_qa, visible=True),
@@ -109,6 +138,7 @@ def generate_qa_pairs(topic, retrieval_query, emb_retrieval_query):
             gr.update(visible=True), 
             gr.update(visible=True),
             gr.update(visible=True)]
+
 
 def generate_distractors(file, topic, distractor_count):
     gc.collect()
@@ -121,11 +151,6 @@ def generate_distractors(file, topic, distractor_count):
     if any(df.columns != constants.DIST_COLS):
         gr.Error('Uploaded CSV has incorrect format.')
     else:
-        #global reader, pipeline, qa_model, question_generator
-        #del reader
-        #del pipeline
-        #del qa_model
-        #del question_generator
         gc.collect()
         # Rare usage, importing here to prevent memory overload by Word2Vec and LLMs
         import distractor_generation
@@ -172,7 +197,7 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
     with gr.Row():
         topic = gr.Textbox(label='Topic', 
                            placeholder='openstax_biology, ck12_economics...')
-        data_source = gr.Dropdown(['OpenStax.org', 'CK12.org', 'Brightstorm'],
+        data_source = gr.Dropdown(['OpenStax.org', 'CK12.org', 'Brightstorm', 'Others'],
                                   label='Data Source')
         labels = gr.Textbox(label='Zero Shot Labels', 
                             placeholder= 'Add labels science, economics, technology...(use , to split)')
@@ -187,11 +212,14 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
                                     visible=False)
         emb_retrieveal_query = gr.Textbox(label='Retrieval Query - Embedding based', placeholder='Enter query',
                                         visible=False)
+        zero_shot_query = gr.Textbox(label='Zero Shot Label', placeholder='Enter labels (use , to split)',
+                                     visible=False)
+
     generate_qa_btn = gr.Button(f'Generate Question Answer Pairs', visible=False)
 
     upload_btn.click(fn=upload_csv,
                     inputs=[topic, file, labels, data_source], 
-                    outputs=[data_output_box, generate_qa_btn, retrieval_query, emb_retrieveal_query])
+                    outputs=[data_output_box, generate_qa_btn, retrieval_query, emb_retrieveal_query, zero_shot_query])
 
     qa_output_box = gr.Textbox(label='Generated QA Pairs Status', visible=False)
     generated_file = gr.File(label='Generated CSV', visible=False)
@@ -206,7 +234,7 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
     generated_distr_file = gr.File(label='Generated QA-Distractors CSV', visible=False)
 
     generate_qa_btn.click(fn=generate_qa_pairs, 
-                          inputs=[topic, retrieval_query, emb_retrieveal_query], 
+                          inputs=[topic, retrieval_query, emb_retrieveal_query, zero_shot_query], 
                           outputs=[qa_output_box, generated_file, df_output, selected_rows_file, 
                                    distractor_file, generate_distr_btn, distractor_count])
     df_output.select(fn=add_row, inputs=None, outputs=selected_rows_file)
@@ -221,14 +249,7 @@ dashboard.queue().launch(server_port=8080, share=False)
 # TODO - 
 # change output in gen_qa_pairs on status update
 # display generated qa pair df -> make it run for tqdm(run doc)
-#
-# 1. data loader for all formats.
 # 2. TDQMs
 # 3. Option to choose different models in dashboard
-# 4. Set visibility to False for output_box, later True.
-# 5. Add data filtering (via class labels)
 # 6. Give option to select QA model
-# 7. Give option to select number of distractors
 # 8. Readme word2vec downloading, memory requirements (13 GB)
-# 9. DONE: Remove stopwords from distractors (the cell, an acid)
-# 10. DONE: Numbers for Distractor Generation
