@@ -2,22 +2,8 @@ import pandas as pd
 from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.schema import Document
 from numpy import nan
-from haystack.nodes import QuestionGenerator, FARMReader, BM25Retriever, EmbeddingRetriever, TransformersDocumentClassifier
+from haystack.nodes import BM25Retriever, EmbeddingRetriever, TransformersDocumentClassifier
 import gc
-
-'''
-def openstax_to_doc(path: str) -> dict[str, list[str]]:
-    """
-    Convert Openstax dataframe to dict which can be passed as Document to Haystack
-    """
-    df = pd.read_csv(path)
-    df['summary_heading'] = df['summary_heading'].replace('\d+\.\d+ ', '', regex=True)
-    df.columns = ['topic', 'content', 'subject']
-    df['meta'] = df.apply(lambda x: {'topic': x['topic'], 'subject': x['subject']}, axis=1).to_list()
-    df = df[['content', 'meta']]
-    dict_df = df.to_dict('records')
-    return dict_df
-'''
 
 def csv_to_doc(path: str, **kwargs) -> dict[str, list[str]]:
     df = pd.read_csv(path)

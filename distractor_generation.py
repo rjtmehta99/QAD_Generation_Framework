@@ -1,14 +1,12 @@
-import constants
-from gensim.models import KeyedVectors
-#import gensim.downloader as api
-
-#model = api.load(model_name)
-#word2vec_file = "word2vec-google-news-300.model"
-model = KeyedVectors.load(constants.WORD2VEC_FILE)
-
 import re
 from rapidfuzz.process import extract
 from rapidfuzz.distance import Levenshtein
+import constants
+from gensim.models import KeyedVectors
+#import gensim.downloader as api
+#model = api.load(model_name)
+#word2vec_file = "word2vec-google-news-300.model"
+model = KeyedVectors.load(constants.WORD2VEC_FILE)
 
 def check_numeric(answer: str) -> int | None:
     """

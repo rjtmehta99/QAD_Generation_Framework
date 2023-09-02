@@ -4,8 +4,7 @@ import constants
 import pandas as pd
 import gradio as gr
 from haystack.pipelines import QuestionAnswerGenerationPipeline
-from haystack.document_stores import ElasticsearchDocumentStore
-from haystack.nodes import QuestionGenerator, FARMReader, BM25Retriever, EmbeddingRetriever
+from haystack.nodes import QuestionGenerator, FARMReader
 
 selected_rows = []
 
@@ -89,26 +88,10 @@ def generate_qa_pairs(topic: str, retrieval_query: str, emb_retrieval_query: str
     elif emb_retrieval_query != '' and retrieval_query == '':
         emb_retrieval_flag = True
         docs = helper.load_embedded_docs(topic, emb_retrieval_query)
-        '''
-        doc_store = ElasticsearchDocumentStore(index=topic, similarity='dot_product', embedding_dim=768)
-        retriever = EmbeddingRetriever(document_store=doc_store, embedding_model='sentence-transformers/msmarco-distilbert-base-v4',
-                                       model_format='sentence_transformers')
-        doc_store.update_embeddings(retriever=retriever)
-        docs = retriever.retrieve(query=emb_retrieval_query)
-        '''
 
     elif retrieval_query == '' and emb_retrieval_query == '' and zero_shot_query != '':
         zero_shot_flag = True
         docs = helper.load_zeroshot_docs(topic, zero_shot_query)
-        #def load_zeroshot_docs():
-        '''
-        zero_shot_classes = zero_shot_query.split(',')
-        zero_shot_classes = [value.strip() for value in zero_shot_classes]
-        _filter = {"classification.label": zero_shot_classes}
-        print(_filter)
-        doc_store = ElasticsearchDocumentStore(index=topic)
-        docs = doc_store.get_all_documents(filters=_filter)
-        '''
         
     global df_gen_qa
     pipeline = init_pipeline()
@@ -118,16 +101,7 @@ def generate_qa_pairs(topic: str, retrieval_query: str, emb_retrieval_query: str
     kwargs = {'retrieval_flag': retrieval_flag, 'emb_retrieval_flag': emb_retrieval_flag, 'zero_shot_flag': zero_shot_flag,
               'retrieval_query': retrieval_query, 'emb_retrieval_query': emb_retrieval_query, 'zero_shot_query': zero_shot_query}
     qa_output_str = helper.prepare_qa_string(df_gen_qa, **kwargs)
-    '''
-    if retrieval_flag:
-        qa_output_str = f'BM25 - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{retrieval_query}". Download the file below.'
-    elif emb_retrieval_flag:
-        qa_output_str = f'Embedding retrieval - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{emb_retrieval_query}". Download the file below.'
-    elif zero_shot_flag:
-        qa_output_str = f'Zero shot label - {len(df_gen_qa)} QA pairs were generated using documents filtered on "{zero_shot_query}". Download the file below.'
-    else:
-        qa_output_str = f'{len(df_gen_qa)} QA pairs were generated. Download the file below.'
-    '''
+
     del pipeline
     gc.collect()
     
@@ -145,8 +119,6 @@ def generate_distractors(file, topic, distractor_count):
     df = pd.read_csv(file.name)
     print('Generating distractors')
     distractor_count = int(distractor_count)
-    #global reader, question_generator, pipeline
-    #del reader, question_generator, pipeline
     
     if any(df.columns != constants.DIST_COLS):
         gr.Error('Uploaded CSV has incorrect format.')
@@ -245,11 +217,3 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
 
     
 dashboard.queue().launch(server_port=8080, share=False)
-
-# TODO - 
-# change output in gen_qa_pairs on status update
-# display generated qa pair df -> make it run for tqdm(run doc)
-# 2. TDQMs
-# 3. Option to choose different models in dashboard
-# 6. Give option to select QA model
-# 8. Readme word2vec downloading, memory requirements (13 GB)
