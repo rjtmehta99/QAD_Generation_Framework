@@ -19,12 +19,30 @@ def init_pipeline():
     pipeline = QuestionAnswerGenerationPipeline(question_generator, reader)
     return pipeline
 
-def upload_csv(topic, file, labels, data_source):
+def upload_csv(topic, file, labels, data_source, subject_filter):
     """
     Load CSV to Elasticsearch document store and apply zero shot classification.
     """
     print('Uploading CSV')
     gr.Info(f'Uploading file to Elasticsearch. Please wait.')
+    if subject_filter != '':
+        
+        if subject_filter == 'Physics':
+            docs = helper.csv_to_doc(path=constants.PHYSICS_CSV, source='subject',
+                                    content='content')
+        elif subject_filter == 'Chemistry':
+            docs = helper.csv_to_doc(path=constants.CHEMISTRY_CSV, source='subject',
+                                    content='content')
+        elif subject_filter == 'Biology':
+            docs = helper.csv_to_doc(path=constants.BIOLOGY_CSV, source='subject',
+                                    content='content')
+        elif subject_filter == 'Economics':
+            docs = helper.csv_to_doc(path=constants.ECONOMICS_CSV, source='subject',
+                                    content='content')
+        elif subject_filter == 'Physical Sciences':
+            docs = helper.csv_to_doc(path=constants.PHYSICAL_SCIENCE_CSV, source='subject',
+                                    content='content')
+
     if data_source == 'OpenStax.org':
         #docs = helper.openstax_to_doc(path=file.name)
         docs = helper.csv_to_doc(path=file.name, title='summary_heading', 
@@ -38,8 +56,6 @@ def upload_csv(topic, file, labels, data_source):
     elif data_source == 'Others':
         docs = helper.csv_to_doc(path=file.name, source='others', title='', subject='',
                                  content='content')
-    else:
-        raise NotImplementedError
     
     doc_store = helper.add_to_docstore(docs, index=topic, delete_docs=True)
     if labels != '':
@@ -162,6 +178,9 @@ def add_row(event: gr.SelectData):
     df_select.to_csv(path, index=False)
     return gr.update(value=path)
 
+def notify_subj_file(subject):
+    # Notify on subject change from dropdown
+    gr.Info(f'File added for {subject}, click upload to begin.')
 
 theme = gr.themes.Soft()
 with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as dashboard:
@@ -171,8 +190,11 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
                            placeholder='openstax_biology, ck12_economics...')
         data_source = gr.Dropdown(['OpenStax.org', 'CK12.org', 'Brightstorm', 'Others'],
                                   label='Data Source')
+        subject_filter = gr.Dropdown(['Physics', 'Chemistry', 'Biology', 'Economics', 'Physical Science'],
+                                    label='Subject')
+        subject_filter.change(fn=notify_subj_file, inputs=subject_filter)
         labels = gr.Textbox(label='Zero Shot Labels', 
-                            placeholder= 'Add labels science, economics, technology...(use , to split)')
+                            placeholder= 'Add labels (use , to split)')
     
     file = gr.File(file_types=['csv'], label='Add CSV')
     topic.change(fn=change_label, inputs=topic, outputs=file)    
@@ -190,7 +212,7 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
     generate_qa_btn = gr.Button(f'Generate Question Answer Pairs', visible=False)
 
     upload_btn.click(fn=upload_csv,
-                    inputs=[topic, file, labels, data_source], 
+                    inputs=[topic, file, labels, data_source, subject_filter], 
                     outputs=[data_output_box, generate_qa_btn, retrieval_query, emb_retrieveal_query, zero_shot_query])
 
     qa_output_box = gr.Textbox(label='Generated QA Pairs Status', visible=False)

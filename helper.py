@@ -7,8 +7,9 @@ import gc
 
 def csv_to_doc(path: str, **kwargs) -> dict[str, list[str]]:
     df = pd.read_csv(path)
-    #if kwargs['source'] == 'others':
     if 'source' in kwargs:
+        # TODO - mention in readme.md to remove this code if all lines have to be used.
+        df = df.head(50)
         content = kwargs['content']
         df['meta'] = ''
         df = df[[content, 'meta']]
