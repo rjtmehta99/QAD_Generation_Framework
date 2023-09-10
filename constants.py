@@ -28,3 +28,9 @@ PHYSICS_CSV = 'data/physics_merged.csv'
 BIOLOGY_CSV = 'data/biology_merged.csv'
 ECONOMICS_CSV = 'data/economics_merged.csv'
 PHYSICAL_SCIENCE_CSV = 'data/physical_sciences_merged.csv'
+
+BIOLOGY_OSTAX_CSV = 'data/openstax_biology_sample.csv'
+BIOLOGY_CK12_CSV = 'data/ck-12-biology-flexbook-2.0_content.csv'
+BIOLOGY_BSTORM_CSV = 'data/brightstorm_biology.csv'
+
+SELECTED_ROWS_CSV = 'data/selected_data.csv'

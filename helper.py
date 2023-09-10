@@ -84,16 +84,19 @@ def run_pipeline(pipeline, docs:dict[str, list[str]]) -> pd.DataFrame:
     gc.collect()
     return df
 
+
 def load_all_docs(topic: str) -> list[Document]:
     doc_store = ElasticsearchDocumentStore(index=topic)
     docs = doc_store.get_all_documents()
     return docs
+
 
 def load_bm25_docs(topic: str, retrieval_query: str) -> list[Document]:
     doc_store = ElasticsearchDocumentStore(index=topic)
     retriever = BM25Retriever(document_store=doc_store)
     docs = retriever.retrieve(query=retrieval_query)
     return docs
+
 
 def load_embedded_docs(topic: str, emb_retrieval_query: str) -> list[Document]: 
     doc_store = ElasticsearchDocumentStore(index=topic, similarity='dot_product', embedding_dim=768)
@@ -105,15 +108,24 @@ def load_embedded_docs(topic: str, emb_retrieval_query: str) -> list[Document]:
     gc.collect()
     return docs
 
+
+def split_labels(labels):
+    labels = labels.split(',')
+    labels = [label.strip() for label in labels]
+    return labels
+
+
 def load_zeroshot_docs(topic: str, zero_shot_query: str) -> list[Document]:
     # Clean input from dashboard
-    zero_shot_classes = zero_shot_query.split(',')
-    zero_shot_classes = [value.strip() for value in zero_shot_classes]
+    #zero_shot_classes = zero_shot_query.split(',')
+    #zero_shot_classes = [value.strip() for value in zero_shot_classes]
+    zero_shot_labels = split_labels(zero_shot_query)
     # Filtering ES data
-    _filter = {"classification.label": zero_shot_classes}
+    _filter = {"classification.label": zero_shot_labels}
     doc_store = ElasticsearchDocumentStore(index=topic)
     docs = doc_store.get_all_documents(filters=_filter)
     return docs
+
 
 def prepare_qa_string(df_gen_qa, **kwargs):
     if kwargs['retrieval_flag']:
