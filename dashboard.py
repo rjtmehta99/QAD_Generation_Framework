@@ -154,6 +154,7 @@ def generate_distractors(topic, distractor_count):
     gc.collect()
     #df = pd.read_csv(file.name)
     df = pd.read_csv(constants.SELECTED_ROWS_CSV)
+    df.drop(labels='document_context', axis=1)
     print('Generating distractors')
     distractor_count = int(distractor_count)
     
@@ -178,7 +179,7 @@ def generate_distractors(topic, distractor_count):
         path = f'data/{topic}_gen_QA_distractor.csv'
         df_distractor.to_csv(path, index=False)
         
-        return gr.update(value=path, visible=True)
+        return [gr.update(value=path, visible=True), gr.update(value=path, visible=True)]
 
 
 def change_label(topic):
@@ -269,9 +270,11 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
 
     df_output.select(fn=add_row, inputs=None, outputs=[selected_rows_file, df_rows])
 
+    df_distr = gr.DataFrame(label='Generated Distractors', visible=False, wrap=True,
+                            show_label=True, interactive=False)
     generate_distr_btn.click(fn=generate_distractors,
                             inputs=[topic, distractor_count],
-                            outputs=generated_distr_file)
+                            outputs=[generated_distr_file, df_distr])
 
     
 dashboard.queue().launch(server_port=8080, share=False)
