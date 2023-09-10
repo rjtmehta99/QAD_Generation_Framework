@@ -154,32 +154,30 @@ def generate_distractors(topic, distractor_count):
     gc.collect()
     #df = pd.read_csv(file.name)
     df = pd.read_csv(constants.SELECTED_ROWS_CSV)
-    df.drop(labels='document_context', axis=1)
+    df = df.drop(labels='document_context', axis=1)
+    
     print('Generating distractors')
     distractor_count = int(distractor_count)
     
-    if any(df.columns != constants.DIST_COLS):
-        gr.Error('Uploaded CSV has incorrect format.')
-    else:
-        gc.collect()
-        # Rare usage, importing here to prevent memory overload by Word2Vec and LLMs
-        import distractor_generation
-        gr.Info('Generating distractors')
-        df['distractors'] = df['generated_answer'].apply(lambda x: 
-                                                        distractor_generation.generate_disctractors(answer=x, 
-                                                                                                    distractor_count=distractor_count))
-        # Convert string numeric answer with int numeric answer
-        df['generated_answer'] = df['generated_answer'].apply(lambda x: distractor_generation.convert_numeric_answer(answer=x))
-        # Code taken from https://stackoverflow.com/questions/43752845/list-of-values-to-columns-in-pandas-dataframe
-        df_distractor = pd.DataFrame(df['distractors'].values.tolist()).add_prefix(constants.COL_PREFIX)
-        df_distractor = df_distractor.join(df[constants.DIST_COLS])
-        # Reorder columns
-        df_distractor = df_distractor[constants.DIST_COLS+[constants.COL_PREFIX+str(_) for _ in range(distractor_count)]]
-        
-        path = f'data/{topic}_gen_QA_distractor.csv'
-        df_distractor.to_csv(path, index=False)
-        
-        return [gr.update(value=path, visible=True), gr.update(value=path, visible=True)]
+    gc.collect()
+    # Rare usage, importing here to prevent memory overload by Word2Vec and LLMs simultaneously
+    import distractor_generation
+    gr.Info('Generating distractors')
+    df['distractors'] = df['generated_answer'].apply(lambda x: 
+                                                    distractor_generation.generate_disctractors(answer=x, 
+                                                                                                distractor_count=distractor_count))
+    # Convert string numeric answer with int numeric answer
+    df['generated_answer'] = df['generated_answer'].apply(lambda x: distractor_generation.convert_numeric_answer(answer=x))
+    # Code taken from https://stackoverflow.com/questions/43752845/list-of-values-to-columns-in-pandas-dataframe
+    df_distractor = pd.DataFrame(df['distractors'].values.tolist()).add_prefix(constants.COL_PREFIX)
+    df_distractor = df_distractor.join(df[constants.DIST_COLS])
+    # Reorder columns
+    df_distractor = df_distractor[constants.DIST_COLS+[constants.COL_PREFIX+str(_) for _ in range(distractor_count)]]
+    
+    path = f'data/{topic}_gen_QA_distractor.csv'
+    df_distractor.to_csv(path, index=False)
+    
+    return [gr.update(value=path, visible=True), gr.update(value=path, visible=True)]
 
 
 def change_label(topic):

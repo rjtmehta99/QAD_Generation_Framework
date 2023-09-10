@@ -55,10 +55,26 @@ def clean_distractors(distractors: list[str], cleaned_answer: str) -> list[str]:
     return cleaned_distractors
 
 
+def remove_blacklisted(distractors: list[str]):
+    """
+    Remove blacklisted distractors from a list of distractors.
+    """
+    filtered_distractors = []
+    for distr in distractors:
+        for blisted in constants.BLACKLISTED_DISTR_WORDS:
+            words = distr.split(' ')
+            if blisted in words:
+                break
+        else:
+            filter_distractors.append(distr)
+    return filtered_distractors
+
+
 def filter_distractors(cleaned_distractors: list[str], cleaned_answer: str) -> list[str]:
     filtered_distractors = extract(query=cleaned_answer, choices=cleaned_distractors,
                                    scorer=Levenshtein.distance, limit=None)
     filtered_distractors = list(filter(lambda y: y[1]>3, filtered_distractors))
+    filtered_distractors = remove_blacklisted(filtered_distractors)
     filtered_distractors.sort(key=lambda x: x[2])
     filtered_distractors = list(map(lambda x:x[0], filtered_distractors))
     return filtered_distractors
