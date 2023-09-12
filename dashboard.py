@@ -77,7 +77,8 @@ def upload_csv(topic, file, labels, data_source, subject_filter):
     if labels != '':
         labels = helper.split_labels(labels)
         doc_store = helper.classify_docs(labels=labels, doc_store=doc_store, index=topic)
-        return [gr.update(value=f'CSV added to Elasticsearch under {topic}.\nLabels added.', visible=True),
+        return [gr.update(value=f'CSV added to Elasticsearch under {topic}.\nLabels added.', 
+                          visible=True),
                 gr.update(visible=True),
                 gr.update(visible=True),
                 gr.update(visible=True),
@@ -129,8 +130,9 @@ def generate_qa_pairs(topic: str, retrieval_query: str, emb_retrieval_query: str
     df_gen_qa = helper.run_pipeline(pipeline, docs)
     path = f'data/{topic}_generated_QA.csv'
     df_gen_qa.to_csv(path, index=False)
-    kwargs = {'retrieval_flag': retrieval_flag, 'emb_retrieval_flag': emb_retrieval_flag, 'zero_shot_flag': zero_shot_flag,
-              'retrieval_query': retrieval_query, 'emb_retrieval_query': emb_retrieval_query, 'zero_shot_query': zero_shot_query}
+    kwargs = {'retrieval_flag': retrieval_flag, 'emb_retrieval_flag': emb_retrieval_flag, 
+              'zero_shot_flag': zero_shot_flag, 'retrieval_query': retrieval_query, 
+              'emb_retrieval_query': emb_retrieval_query, 'zero_shot_query': zero_shot_query}
     qa_output_str = helper.prepare_qa_string(df_gen_qa, **kwargs)
 
     # Dataframe that would contain selected rows
@@ -217,9 +219,11 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
     with gr.Row():
         topic = gr.Textbox(label='Topic', 
                            placeholder='openstax_biology, ck12_economics...')
-        data_source = gr.Dropdown(choices=['OpenStax.org (Biology)', 'CK12.org (Biology)', 'Brightstorm (Biology)', 'Others'],
+        data_source = gr.Dropdown(choices=['OpenStax.org (Biology)', 'CK12.org (Biology)',
+                                           'Brightstorm (Biology)', 'Others'],
                                   label='Data Source')
-        subject_filter = gr.Dropdown(choices=['Physics (All)', 'Chemistry (All)', 'Biology (All)', 'Economics (All)', 'Physical Science (All)'],
+        subject_filter = gr.Dropdown(choices=['Physics (All)', 'Chemistry (All)', 'Biology (All)', 
+                                              'Economics (All)', 'Physical Science (All)'],
                                     label='Subject')
         subject_filter.change(fn=notify_subj_file, inputs=subject_filter)
         labels = gr.Textbox(label='Zero Shot Labels', 
@@ -229,7 +233,7 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
     topic.change(fn=change_label, inputs=topic, outputs=file)    
     
     data_source.select(fn=enable_upload, inputs=None, outputs=[file, subject_filter])
-    upload_btn = gr.Button('Add Data')
+    upload_btn = gr.Button('Add Data', min_width=10).style(full_width=False)
     data_output_box = gr.Textbox(label='Data Upload Status', visible=False)
     
     with gr.Row():
@@ -244,7 +248,8 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
 
     upload_btn.click(fn=upload_csv,
                     inputs=[topic, file, labels, data_source, subject_filter], 
-                    outputs=[data_output_box, generate_qa_btn, retrieval_query, emb_retrieval_query, zero_shot_query])
+                    outputs=[data_output_box, generate_qa_btn, retrieval_query, 
+                            emb_retrieval_query, zero_shot_query])
 
     qa_output_box = gr.Textbox(label='Generated QA Pairs Status', visible=False)
     generated_file = gr.File(label='Generated CSV', visible=False)
@@ -256,10 +261,10 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
                            show_label=True, interactive=False)
     
     #distractor_file = gr.File(label='Add CSV to generate distractors', visible=False, file_types=['csv'])
-    distractor_count = gr.Number(label='Distractor Counts', value=5 , visible=False)
+    distractor_count = gr.Number(label='Distractor Answer Count', value=5 , visible=False)
 
-    generate_distr_btn = gr.Button(value='Generate Distractors From Selected Rows', visible=False)
-    generated_distr_file = gr.File(label='Generated QA-Distractors CSV', visible=False)
+    generate_distr_btn = gr.Button(value='Generate Distractor Answers From Selected Rows', visible=False)
+    generated_distr_file = gr.File(label='Generated QA Distractor Answers CSV', visible=False)
     
     generate_qa_btn.click(fn=generate_qa_pairs, 
                           inputs=[topic, retrieval_query, emb_retrieval_query, zero_shot_query], 
@@ -268,11 +273,10 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
 
     df_output.select(fn=add_row, inputs=None, outputs=[selected_rows_file, df_rows])
 
-    df_distr = gr.DataFrame(label='Generated Distractors', visible=False, wrap=True,
+    df_distr = gr.DataFrame(label='Generated Distractor Answers', visible=False, wrap=True,
                             show_label=True, interactive=False)
     generate_distr_btn.click(fn=generate_distractors,
                             inputs=[topic, distractor_count],
                             outputs=[generated_distr_file, df_distr])
 
-    
 dashboard.queue().launch(server_port=8080, share=False)
