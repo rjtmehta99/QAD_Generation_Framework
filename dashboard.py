@@ -27,19 +27,19 @@ def upload_csv(topic, file, labels, data_source, subject_filter):
     gr.Info(f'Uploading file to Elasticsearch. Please wait.')
     if subject_filter != '':
         
-        if subject_filter == 'Physics':
+        if subject_filter == 'Physics (All)':
             docs = helper.csv_to_doc(path=constants.PHYSICS_CSV, source='subject',
                                     content='content')
-        elif subject_filter == 'Chemistry':
+        elif subject_filter == 'Chemistry (All)':
             docs = helper.csv_to_doc(path=constants.CHEMISTRY_CSV, source='subject',
                                     content='content')
-        elif subject_filter == 'Biology':
+        elif subject_filter == 'Biology (All)':
             docs = helper.csv_to_doc(path=constants.BIOLOGY_CSV, source='subject',
                                     content='content')
-        elif subject_filter == 'Economics':
+        elif subject_filter == 'Economics (All)':
             docs = helper.csv_to_doc(path=constants.ECONOMICS_CSV, source='subject',
                                     content='content')
-        elif subject_filter == 'Physical Science':
+        elif subject_filter == 'Physical Science (All)':
             docs = helper.csv_to_doc(path=constants.PHYSICAL_SCIENCE_CSV, source='subject',
                                     content='content')
     
