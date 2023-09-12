@@ -233,7 +233,7 @@ with gr.Blocks(css=constants.css, title=constants.tab_title, theme=theme) as das
     topic.change(fn=change_label, inputs=topic, outputs=file)    
     
     data_source.select(fn=enable_upload, inputs=None, outputs=[file, subject_filter])
-    upload_btn = gr.Button('Add Data', min_width=10).style(full_width=False)
+    upload_btn = gr.Button('Add Data')
     data_output_box = gr.Textbox(label='Data Upload Status', visible=False)
     
     with gr.Row():
