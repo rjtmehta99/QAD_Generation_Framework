@@ -34,7 +34,12 @@ def check_numeric(answer: str) -> int | None:
 
 # Distractor Generation Helpers
 def clean_answer(answer: str) -> str:
-    stage_0 = answer.split(' ')
+    try:
+        stage_0 = answer.split(' ')
+    # Encountered when answer is float
+    except AttributeError:
+        answer = str(answer)
+        stage_0 = answer.split(' ')
     stage_1 = [word for word in stage_0 if word.lower() not in constants.STOPWORDS]
     stage_2 = [val[0].isupper() for val in stage_1]
     if any(stage_2):
