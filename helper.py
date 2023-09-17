@@ -4,6 +4,9 @@ from haystack.schema import Document
 from numpy import nan
 from haystack.nodes import BM25Retriever, EmbeddingRetriever, TransformersDocumentClassifier
 import gc
+from torch import cuda
+cuda.empty_cache()
+
 
 def csv_to_doc(path: str, **kwargs) -> dict[str, list[str]]:
     df = pd.read_csv(path)
@@ -70,16 +73,27 @@ def run_pipeline(pipeline, docs:dict[str, list[str]]) -> pd.DataFrame:
     generated_ques = []
     generated_ans = []
     doc_contexts = []
+    #for split_docs in docs
+    #df_temp = pd.DataFrame(columns=['generated_question', 'generated_answer', 'document_context'])
+    chunk_size = 200
+    for chunk in range(0, len(docs), chunk_size):
+        chunked_docs = docs[chunk:chunk+chunk_size]
+        print(f'LEN: {len(chunked_docs)}')
+        print(f'\nWorking on docs: {str(chunk)}:{str(chunk+chunk_size)}')
+        results = pipeline.run(documents=chunked_docs, debug=True)
+        for query_content, answer_content, document_content in zip(results['queries'], results['answers'], results['documents']):
+            answer = answer_content[0]
+            document = document_content[0]
+            
+            if answer.score > 0.75:
+                generated_ques.append(query_content)
+                generated_ans.append(answer.answer)
+                doc_contexts.append(document.content)
 
-    results = pipeline.run(documents=docs)
-    for query_content, answer_content, document_content in zip(results['queries'], results['answers'], results['documents']):
-        answer = answer_content[0]
-        document = document_content[0]
-        if answer.score > 0.75:
-            generated_ques.append(query_content)
-            generated_ans.append(answer.answer)
-            doc_contexts.append(document.content)
-    df = pd.DataFrame(data={'generated_question':generated_ques, 'generated_answer':generated_ans, 'document_context':doc_contexts})
+        df = pd.DataFrame(data={'generated_question':generated_ques, 'generated_answer':generated_ans, 'document_context':doc_contexts})
+        df.to_csv(f'data/generated_{str(chunk)}_{str(chunk+chunk_size)}_QA.csv', index=False)
+        print(f'\nSaved: {str(chunk)}:{str(chunk_size)}')
+        
     del pipeline
     gc.collect()
     return df

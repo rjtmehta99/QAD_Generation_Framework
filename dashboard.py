@@ -5,6 +5,10 @@ import pandas as pd
 import gradio as gr
 from haystack.pipelines import QuestionAnswerGenerationPipeline
 from haystack.nodes import QuestionGenerator, FARMReader
+import gc
+from torch import cuda
+gc.collect()
+cuda.empty_cache()
 
 selected_rows = []
 

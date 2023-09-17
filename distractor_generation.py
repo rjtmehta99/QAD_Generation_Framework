@@ -84,7 +84,7 @@ def generate_disctractors(answer: str, distractor_count: int=10) -> list[str]:
     try:
         numeric_answer = check_numeric(answer)
         if numeric_answer:
-            print(f'Creating numeric distractors for {answer}')
+            #print(f'Creating numeric distractors for {answer}')
             numeric_distractors = [numeric_answer+5, numeric_answer+10, numeric_answer-5, 
                                    numeric_answer-10, numeric_answer+1, numeric_answer-1]
             # Add empty values to other distractors
@@ -103,11 +103,11 @@ def generate_disctractors(answer: str, distractor_count: int=10) -> list[str]:
             distractors = model.most_similar(cleaned_answer, topn=20)
             cleaned_distractors = clean_distractors(distractors, cleaned_answer)
             filtered_distractors = filter_distractors(cleaned_distractors, cleaned_answer)[:distractor_count]
-            print(f'Generated distractor for {answer}')
+            #print(f'Generated distractor for {answer}')
             return filtered_distractors
 
     except KeyError:
-        print(f'No matching word found for {answer} in Word2Vec')
+        #print(f'No matching word found for {answer} in Word2Vec')
         return ['' for _ in range(distractor_count)]
 
 def convert_numeric_answer(answer):
