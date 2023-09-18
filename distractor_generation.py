@@ -43,9 +43,13 @@ def clean_answer(answer: str) -> str:
     stage_1 = [word for word in stage_0 if word.lower() not in constants.STOPWORDS]
     stage_2 = [val[0].isupper() for val in stage_1]
     if any(stage_2):
-        stage_3 = answer.title()
+        #stage_3 = answer.title()
+        stage_3 = ' '.join(stage_1)
+        stage_3 = stage_3.title()
     else:
-        stage_3 = answer.lower()
+        #stage_3 = answer.lower()
+        stage_3 = ' '.join(stage_1)
+        stage_3 = stage_3.lower()
     stage_4 = re.sub(' ', '_', stage_3)
     return stage_4
 

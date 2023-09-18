@@ -7,7 +7,7 @@ DIST_COLS = ['generated_question', 'generated_answer']
 DISTRACTOR_LIMIT = 10
 COL_PREFIX = 'distractor_'
 WORD2VEC_FILE = 'data/word2vec-google-news-300.model'
-STOPWORDS = ['a', 'an', 'the', 'from', 'of', 'its', 'it\'s']
+STOPWORDS = ['a', 'an', 'the', 'from', 'of', 'its', 'it\'s', 'via', 'all', 'or', 'your', 'by', 'it', 'their', 'from']
 BLACKLISTED_DISTR_WORDS = ['Dr.', 'phone']
 WORD_NUMBER_DICT = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10, 
                     'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 
