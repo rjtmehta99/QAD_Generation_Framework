@@ -6,4 +6,4 @@ __pycache__
 .vscode
 *.model*
 backup_*
-temp_generation.py
+temp_*

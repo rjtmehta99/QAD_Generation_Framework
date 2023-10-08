@@ -170,7 +170,7 @@ def generate_distractors(topic, distractor_count):
     import distractor_generation
     gr.Info('Generating distractors')
     df['distractors'] = df['generated_answer'].apply(lambda x: 
-                                                    distractor_generation.generate_disctractors(answer=x, 
+                                                      distractor_generation.generate_disctractors(answer=x, 
                                                                                                 distractor_count=distractor_count))
     # Convert string numeric answer with int numeric answer
     df['generated_answer'] = df['generated_answer'].apply(lambda x: distractor_generation.convert_numeric_answer(answer=x))
