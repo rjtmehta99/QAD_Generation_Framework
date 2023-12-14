@@ -1,10 +1,10 @@
-import pandas as pd
-from haystack.document_stores import ElasticsearchDocumentStore
-from haystack.schema import Document
-from numpy import nan
-from haystack.nodes import BM25Retriever, EmbeddingRetriever, TransformersDocumentClassifier
 import gc
+import pandas as pd
+from numpy import nan
 from torch import cuda
+from haystack.schema import Document
+from haystack.document_stores import ElasticsearchDocumentStore
+from haystack.nodes import BM25Retriever, EmbeddingRetriever, TransformersDocumentClassifier
 cuda.empty_cache()
 
 
