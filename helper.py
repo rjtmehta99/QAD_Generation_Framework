@@ -34,7 +34,7 @@ def csv_to_doc(path: str, **kwargs) -> dict[str, list[str]]:
     return dict_df
 
 
-def add_to_docstore(docs: dict[str, list[str]], index: str, delete_docs: bool = False) -> None:
+def add_to_docstore(docs: dict[str, list[str]], index: str, delete_docs: bool = False):
     """
     Initialize Elasticsearch document store and write the documents for given index.
     """
@@ -45,7 +45,7 @@ def add_to_docstore(docs: dict[str, list[str]], index: str, delete_docs: bool = 
     return doc_store
 
 
-def classify_docs(labels:list[str], doc_store, index: str) -> None:
+def classify_docs(labels:list[str], doc_store, index: str):
     """
     Use Zero Shot Classification model to add labels to document.
     Labels added to the metadata for each document.
