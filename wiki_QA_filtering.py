@@ -95,14 +95,28 @@ class WikiQA():
                                      'wiki_scores': wiki_score})
         df_wiki.to_csv(f'data/{self.target_column}_QA.csv', index=False)
 
-wikiqa = WikiQA(wiki_csv='data/generated_QA_wiki.csv', 
-                index='wiki_question_summary', 
-                target_column='question_wiki_summary')
+index_column_pairs = [('question_wiki_summary', 'question_wiki_summary'),
+                      ('question_wiki_section_0', 'question_wiki_section_0'),
+                      ('question_wiki_section_1', 'question_wiki_section_1'),
+                      ('question_wiki_section_2', 'question_wiki_section_2'),
+                      ('question_wiki_section_3', 'question_wiki_section_3'),
+                      ('question_wiki_section_4', 'question_wiki_section_4'),
+                      ('answer_wiki_summary', 'answer_wiki_summary'),
+                      ('answer_wiki_section_0', 'answer_wiki_section_0'),
+                      ('answer_wiki_section_1', 'answer_wiki_section_1'),
+                      ('answer_wiki_section_2', 'answer_wiki_section_2'),
+                      ('answer_wiki_section_3', 'answer_wiki_section_3'),
+                      ('answer_wiki_section_4', 'answer_wiki_section_4')]
 
-dict_df = wikiqa.prepare_csv()
-wikiqa.prepare_query_doc_pairs(data=dict_df)
+for index, target_column in index_column_pairs:
+    wikiqa = WikiQA(wiki_csv='data/wiki_gen_QA_all.csv', 
+                    index=index,  
+                    target_column=target_column)
 
-reader = wikiqa.create_reader()
-pipeline = wikiqa.build_pipeline(reader=reader)
-results = wikiqa.execute_pipeline(pipeline=pipeline)
-wikiqa.save_results(results)
+    dict_df = wikiqa.prepare_csv()
+    wikiqa.prepare_query_doc_pairs(data=dict_df)
+
+    reader = wikiqa.create_reader()
+    pipeline = wikiqa.build_pipeline(reader=reader)
+    results = wikiqa.execute_pipeline(pipeline=pipeline)
+    wikiqa.save_results(results)
