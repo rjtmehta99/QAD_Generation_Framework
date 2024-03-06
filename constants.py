@@ -4,6 +4,8 @@ page_title = '<div style="text-align: center; margin: 0 auto;"><h1 style="font-s
 
 # Distractor
 DIST_COLS = ['generated_question', 'generated_answer']
+DIST_COLS_2 = ['generated_question', 'generated_answer','T5_distractors', 'cleaned_distr']
+
 DISTRACTOR_LIMIT = 10
 COL_PREFIX = 'distractor_'
 WORD2VEC_FILE = 'data/word2vec-google-news-300.model'

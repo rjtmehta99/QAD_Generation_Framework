@@ -97,16 +97,8 @@ class WikiQA():
 
 index_column_pairs = [('question_wiki_summary', 'question_wiki_summary'),
                       ('question_wiki_section_0', 'question_wiki_section_0'),
-                      ('question_wiki_section_1', 'question_wiki_section_1'),
-                      ('question_wiki_section_2', 'question_wiki_section_2'),
-                      ('question_wiki_section_3', 'question_wiki_section_3'),
-                      ('question_wiki_section_4', 'question_wiki_section_4'),
                       ('answer_wiki_summary', 'answer_wiki_summary'),
-                      ('answer_wiki_section_0', 'answer_wiki_section_0'),
-                      ('answer_wiki_section_1', 'answer_wiki_section_1'),
-                      ('answer_wiki_section_2', 'answer_wiki_section_2'),
-                      ('answer_wiki_section_3', 'answer_wiki_section_3'),
-                      ('answer_wiki_section_4', 'answer_wiki_section_4')]
+                      ('answer_wiki_section_0', 'answer_wiki_section_0')]
 
 for index, target_column in index_column_pairs:
     wikiqa = WikiQA(wiki_csv='data/wiki_gen_QA_all.csv', 
