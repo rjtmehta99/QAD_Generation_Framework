@@ -37,3 +37,7 @@ BIOLOGY_CK12_CSV = 'data/ck-12-biology-flexbook-2.0_content.csv'
 BIOLOGY_BSTORM_CSV = 'data/brightstorm_biology.csv'
 
 SELECTED_ROWS_CSV = 'data/selected_data.csv'
+
+CHUNK_SIZE = 20
+TOP_N_DISTR = 5
+EMBEDDING_MODEL = 'thenlper/gte-large'
